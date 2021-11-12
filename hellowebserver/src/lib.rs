@@ -5,7 +5,6 @@ use std::sync::mpsc;
 use std::sync::Arc;
 use std::sync::Mutex;
 use std::thread;
-use std::time::Duration;
 
 type Job = Box<dyn FnOnce() + Send + 'static>;
 
@@ -27,7 +26,7 @@ impl ThreadPool {
     ///
     /// # Panics
     ///
-    /// `new` 函数在 size 为 0 时会 panic。
+    /// `new` 函数在 size 为 0 时会 返回错误字符串，待调用者处理。
     pub fn new(size: usize) -> Result<ThreadPool, &'static str> {
         if size > 0 {
             let mut workers = Vec::with_capacity(4);
@@ -100,12 +99,8 @@ pub mod handler {
     pub fn handle_stream(mut stream: TcpStream) {
         let mut buffer = [0; 1024];
         let get = b"GET /hello HTTP/1.1\r\n";
-        let sleep = b"GET /sleep HTTP/1.1\r\n";
         stream.read(&mut buffer).unwrap();
         let (status_line, filename) = if buffer.starts_with(get) {
-            ("HTTP/1.1 200 OK", "hello.html")
-        } else if buffer.starts_with(sleep) {
-            thread::sleep(Duration::from_secs(5));
             ("HTTP/1.1 200 OK", "hello.html")
         } else {
             ("HTTP/1.1 404 NOT FOUND", "404.html")
