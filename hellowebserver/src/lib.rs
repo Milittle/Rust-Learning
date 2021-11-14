@@ -20,13 +20,13 @@ pub struct ThreadPool {
 }
 
 impl ThreadPool {
-    /// 创建线程池。
+    /// Creating ThreadPool
     ///
-    /// 线程池中线程的数量。
+    /// size: thread size
     ///
     /// # Panics
     ///
-    /// `new` 函数在 size 为 0 时会 返回错误字符串，待调用者处理。
+    /// `new` When size less than 1, will return Err str.
     pub fn new(size: usize) -> Result<ThreadPool, &'static str> {
         if size > 0 {
             let mut workers = Vec::with_capacity(4);
