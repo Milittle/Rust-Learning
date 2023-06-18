@@ -3,4 +3,5 @@ members = ["async-test", "chapter-13", "event-epoll-kqueue-iocp",
     "expand-demo", "hello-rust", "hellowebserver",
     "httpie", "macrotest", "minigrep", "mtest",
     "palindromedate", "queryer", "redis-test",
-    "rust-by-example", "thumbor", "lazystatictest"]
+    "thumbor", "lazystatictest", "mysqltest",
+    "guessing_game"]
