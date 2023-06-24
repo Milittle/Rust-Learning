@@ -1,7 +1,20 @@
 [workspace]
-members = ["async_test", "chapter_13", "event_epoll_kqueue_iocp",
-    "expand_demo", "hello_rust", "hellowebserver",
-    "httpie", "macrotest", "minigrep", "mtest",
-    "palindromedate", "queryer", "redis_test",
-    "thumbor", "lazystatictest", "mysqltest",
-    "guessing_game"]
+members = [
+    "async_test",
+    "chapter_13",
+    "event_epoll_kqueue_iocp",
+    "expand_demo",
+    "hello_rust",
+    "hellowebserver",
+    "httpie",
+    "macrotest",
+    "minigrep",
+    "mtest",
+    "palindromedate",
+    "queryer",
+    "redis_test",
+    "thumbor",
+    "lazystatictest",
+    "mysqltest",
+    "guessing_game"
+]

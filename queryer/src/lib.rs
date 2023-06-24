@@ -1,18 +1,16 @@
-
 use anyhow::{anyhow, Result};
 use polars::prelude::*;
 use sqlparser::parser::Parser;
-use std::convert::TryInto;
 use std::ops::{Deref, DerefMut};
 use tracing::info;
 
 mod convert;
 mod dialect;
-mod loader;
 mod fetcher;
+mod loader;
 use convert::Sql;
-use loader::detect_content;
 use fetcher::retrieve_data;
+use loader::detect_content;
 
 pub use dialect::example_sql;
 pub use dialect::TyrDialect;
@@ -56,9 +54,6 @@ pub async fn query<T: AsRef<str>>(sql: T) -> Result<DataSet> {
 
     let sql = &ast[0];
 
-    // 整个 SQL AST 转换成我们定义的 Sql 结构的细节都埋藏在 try_into() 中
-    // 我们只需关注数据结构的使用，怎么转换可以之后需要的时候才关注，这是
-    // 关注点分离，是我们控制软件复杂度的法宝。
     let Sql {
         source,
         condition,
@@ -71,7 +66,6 @@ pub async fn query<T: AsRef<str>>(sql: T) -> Result<DataSet> {
     info!("retrieving data from source: {}", source);
 
     // 从 source 读入一个 DataSet
-    // detect_content，怎么 detect 不用要，重要的是它能根据内容返回 DataSet
     let ds = detect_content(retrieve_data(source).await?).load()?;
 
     let mut filtered = match condition {

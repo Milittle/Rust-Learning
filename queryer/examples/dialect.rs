@@ -1,4 +1,3 @@
-
 use sqlparser::{dialect::GenericDialect, parser::Parser};
 
 fn main() {

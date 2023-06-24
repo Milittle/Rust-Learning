@@ -1,24 +1,29 @@
 use anyhow::{anyhow, Result};
-use clap::{AppSettings, Clap};
-use colored::*;
+use clap::Parser;
+use colored::Colorize;
 use mime::Mime;
 use std::{collections::HashMap, str::FromStr};
 use reqwest::{header, Client, Response, Url};
+use syntect::{
+    easy::HighlightLines,
+    highlighting::{Style, ThemeSet},
+    parsing::SyntaxSet,
+    util::{as_24_bit_terminal_escaped, LinesWithEndings},
+};
 
 // 定义 HTTPie的CLI的主入口，它包含若干子命令
 // 下面的 /// 的注释是文档，clap会将其作为CLI的帮助
 
 /// A native httpie implementation with Rust, can you imagine how easy it is?
-#[derive(Clap, Debug)]
+#[derive(Parser, Debug)]
 #[clap(version = "1.0", author = "Milittle<milittlez@163.com>")]
-#[clap(setting = AppSettings::ColoredHelp)]
 struct Opts {
     #[clap(subcommand)]
     subcmd: SubCommand,
 }
 
 // 子命令分别对应不同的 HTTP 方法，目前支持 get / post
-#[derive(Clap, Debug)]
+#[derive(Parser, Debug)]
 enum SubCommand {
     Get(Get),
     Post(Post),
@@ -27,24 +32,18 @@ enum SubCommand {
 // get 子命令
 
 /// feed get with an url and we will retries the response for you
-#[derive(Clap, Debug)]
+#[derive(Parser, Debug)]
 struct Get {
     /// HTTP 请求的URL
     #[clap(parse(try_from_str = parse_url))]
     url: String,
 }
 
-fn parse_url(s: &str) -> Result<String> {
-    // 这里我们仅仅检查一下 URL 是否合法
-    let _url: Url = s.parse()?;
-    Ok(s.into())
-}
-
 // post 子命令。需要输入一个URL，和若干个可选的 key=value，用于提供 json body
 
 /// feed post with an url and optional key=value pairs, We will post the data to the
 /// as JSON, and retrieve the response for you.
-#[derive(Clap, Debug)]
+#[derive(Parser, Debug)]
 struct Post {
     /// HTTP 请求的 URL
     #[clap(parse(try_from_str = parse_url))]
@@ -83,6 +82,14 @@ fn parse_kv_pair(s: &str) -> Result<KvPair> {
     Ok(s.parse()?)
 }
 
+fn parse_url(s: &str) -> Result<String> {
+    // 这里我们仅仅检查一下 URL 是否合法
+    let _url: Url = s.parse()?;
+
+    Ok(s.into())
+}
+
+
 async fn get(client: Client, args: &Get) -> Result<()> {
     let resp = client.get(&args.url).send().await?;
     Ok(print_resp(resp).await?)
@@ -115,9 +122,8 @@ fn print_headers(resp: &Response) {
 fn print_body(m: Option<Mime>, body: &String) {    
     match m {
         // 对于 "application/json" 我们 pretty print
-        Some(v) if v == mime::APPLICATION_JSON => {            
-            println!("{}", jsonxf::pretty_print(body).unwrap().cyan())  
-        }
+        Some(v) if v == mime::APPLICATION_JSON => print_syntect(body, "json"),
+        Some(v) if v == mime::TEXT_HTML => print_syntect(body, "html"),
         // 其它 mime type，我们就直接输出
         _ => println!("{}", body),
     }
@@ -154,6 +160,19 @@ async fn main() -> Result<()> {
         SubCommand::Post(ref args) => post(client, args).await?,
     };
     Ok(result)
+}
+
+fn print_syntect(s: &str, ext: &str) {
+    // Load these once at the start of your program
+    let ps = SyntaxSet::load_defaults_newlines();
+    let ts = ThemeSet::load_defaults();
+    let syntax = ps.find_syntax_by_extension(ext).unwrap();
+    let mut h = HighlightLines::new(syntax, &ts.themes["base16-ocean.dark"]);
+    for line in LinesWithEndings::from(s) {
+        let ranges: Vec<(Style, &str)> = h.highlight(line, &ps);
+        let escaped = as_24_bit_terminal_escaped(&ranges[..], true);
+        print!("{}", escaped);
+    }
 }
 
 #[cfg(test)]
